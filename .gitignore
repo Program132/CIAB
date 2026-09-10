@@ -3,3 +3,6 @@ datasets
 pyrightconfig.json
 .venv
 .idea
+files_index.txt
+data.db
+src/__pycache__
