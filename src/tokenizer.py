@@ -15,6 +15,11 @@ STATE_FILE = ROOT_DIR / "state.json"
 DATABASE_FILE = ROOT_DIR / DEFAULT_DATABASE_FILE
 
 def init_db(connection: sqlite3.Connection):
+    connection.execute("PRAGMA journal_mode = WAL;")
+    connection.execute("PRAGMA synchronous = NORMAL;")
+    connection.execute("PRAGMA cache_size = -64000;")
+    connection.execute("PRAGMA temp_store = MEMORY;")
+
     with connection:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS tokenizer (
@@ -34,8 +39,16 @@ def init_db(connection: sqlite3.Connection):
         )
 
 def save_state(last_id: int):
+    state = {}
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                state = json.load(f)
+        except Exception:
+            state = {}
+    state["last_file_id_done"] = last_id
     with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump({"last_file_id_done": last_id}, f, indent=4)
+        json.dump(state, f, indent=4)
 
 
 def tokenizer():
