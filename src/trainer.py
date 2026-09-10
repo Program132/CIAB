@@ -22,10 +22,15 @@ INDEX_FILE = ROOT_DIR / "files_index.txt"
 STATE_FILE = ROOT_DIR / "state.json"
 DATABASE_FILE = ROOT_DIR / DEFAULT_DATABASE_FILE
 
-BATCH_FILES = 50
+BATCH_FILES = 40
 
 
 def init_db(connection: sqlite3.Connection):
+    connection.execute("PRAGMA journal_mode = WAL;")
+    connection.execute("PRAGMA synchronous = NORMAL;")
+    connection.execute("PRAGMA cache_size = -64000;")
+    connection.execute("PRAGMA temp_store = MEMORY;")
+
     with connection:
         connection.execute("PRAGMA journal_mode = WAL;")
         connection.execute("PRAGMA synchronous = NORMAL;")
