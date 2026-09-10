@@ -5,5 +5,7 @@ pyrightconfig.json
 .idea
 files_index.txt
 data.db
+data.db-shm
+data.db-wal
 src/__pycache__
 state.json
