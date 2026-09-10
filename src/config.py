@@ -1,6 +1,10 @@
+import re
+
 DEFAULT_DATASETS_FOLDER="datasets"
-DEFAULT_DATABASE_FILE=("data.db")
+DEFAULT_DATABASE_FILE="data.db"
 
 TOKEN_START_SENTENCE="<BOS>"
 TOKEN_END_SENTENCE="<EOS>"
 TOKEN_UNKNOWN_WORD="<UNK>"
+
+WORD_REGEX = re.compile(r"\b\w+\b|[^\w\s]")
