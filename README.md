@@ -15,6 +15,10 @@ Le programme "creator" va commencer par lire tout les fichiers et récupérer to
 ## Stockage
 
 Le modèle sera sauvegardé dans un fichier .db en utilisant sqlite comme système de base de donnée dans un premier temps.
+<br>
+Tables:
+
+![img.png](img/img1.png)
 
 ## Génération
 
