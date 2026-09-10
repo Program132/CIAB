@@ -6,3 +6,4 @@ pyrightconfig.json
 files_index.txt
 data.db
 src/__pycache__
+state.json
