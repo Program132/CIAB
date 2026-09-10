@@ -18,7 +18,8 @@ Le modèle sera sauvegardé dans un fichier .db en utilisant sqlite comme systè
 <br>
 Tables:
 
-![img.png](img/img1.png)
+![img1.png](img/img1.png)
+![img2.png](img/img2.png)
 
 ## Génération
 
