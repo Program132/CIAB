@@ -10,7 +10,8 @@ files_index.txt format:
 
 state.json format:
 {
-    "last_file_id_done": -1
+    "last_file_id_done": -1,
+    "last_trainer_file_id_done": -1
 }
 """
 
@@ -54,7 +55,8 @@ def generate_index_and_state():
 
     if not STATE_FILE.exists():
         initial_state = {
-            "last_file_id_done": -1
+            "last_file_id_done": -1,
+            "last_trainer_file_id_done": -1
         }
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             json.dump(initial_state, f, indent=4)
