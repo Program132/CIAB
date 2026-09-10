@@ -2,3 +2,4 @@ datasets
 .vscode
 pyrightconfig.json
 .venv
+.idea
