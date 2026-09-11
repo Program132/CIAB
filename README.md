@@ -6,24 +6,19 @@ CIAB (C IA Builder) est un projet opensource qui a pour but de fournir des fonct
 
 ## Datasets
 
-Les datasets sont un ensemble de donné utilisé pour entrainer et fournir les connaissances au modèle d'IA
+Les datasets sont un ensemble de donnée utilisé pour entrainer et fournir les connaissances au modèle d'IA
 
 ## Préparation du modèle
 
-Le programme "creator" va commencer par lire tout les fichiers et récupérer tout les mots existants uniques dans les datasets fournis, ensuite on va chercher la probabilité que un mot X apparaît après 2 mot Y et Z.
+Le programme "creator" va commencer par lire tous les fichiers et récupérer tous les mots existants uniques dans les datasets fournis, ensuite on va chercher la probabilité qu'un mot X apparaît après 2 mot Y et Z.
 
 ## Stockage
 
-Le modèle sera sauvegardé dans un fichier .db en utilisant sqlite comme système de base de donnée dans un premier temps.
-<br>
-Tables:
-
-![img1.png](img/img1.png)
-![img2.png](img/img2.png)
+Le modèle sera sauvegardé dans des fichiers .bin, pour qu'ils soient le plus simple possible et très "bas niveau".
 
 ## Génération
 
-Le programme "generator" va lire le fichier `.db` passé en argument et va ouvrir une interface CLI pour que vous fassiez les requêtes au modèle.
+Le programme "generator" va lire les fichiers `.bin` passés en argument et va ouvrir une interface CLI pour que vous fassiez les requêtes au modèle.
 
 
 ## Archives
@@ -34,7 +29,7 @@ A chaque fin de version, une release sera publié sur le repository et les déta
 
 ## Version 1.0
 
-La version 1.0 se base sur un modèle d'IA dit trigramme en utilisant les deux tables ci-dessous : 
+La version 1.0 se base sur un modèle d'IA dit trigramme en utilisant les deux tables ci-dessous : <br>
 ![img1.png](img/img1.png)
 ![img2.png](img/img2.png)
 Tout cela sauvegardé dans un fichier `.db` en utilisant sqlite.
@@ -47,6 +42,9 @@ Lien: https://github.com/Program132/CIAB/releases/tag/V1.0
 La version 1.5 restera sur la même base que la 1.0, seulement on utilisera plus une base de donnée sqlite 
 mais simplement un fichier binaire (ou plusieurs) pour stocker notamment les trigrammes, pour accélérer les calculs
 et les recherches, plutôt que dans une base de donnée classique, on écrira en binaire, dans un `.bin`
+
+Vitesse preprocessor.py (`.bin`): `Indexation des fichiers: 2562621 fichiers [00:15, 165557.39 fichiers/s]`<br>
+Vitesse tokenizer.py (`.bin`):`Tokenisation:   13:22<00:00, 2811.60 fichiers/s, vocab_size=5165642`
 
 ## Version 1.75 (En attente)
 
