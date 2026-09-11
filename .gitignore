@@ -9,3 +9,4 @@ data.db-shm
 data.db-wal
 src/__pycache__
 state.json
+database
