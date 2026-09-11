@@ -23,4 +23,30 @@ Tables:
 
 ## Génération
 
-Le programme "generator" va lire le fichier .db passé en argument et va ouvrir une interface CLI pour que vous fassiez les requêtes au modèle.
+Le programme "generator" va lire le fichier `.db` passé en argument et va ouvrir une interface CLI pour que vous fassiez les requêtes au modèle.
+
+
+## Archives
+
+A chaque fin de version, une release sera publié sur le repository et les détails des changements / mises à jour sont expliqués ci-dessous:
+
+# WIP & Changelog
+
+## Version 1.0 (En cours)
+
+La version 1.0 se base sur un modèle d'IA dit trigramme en utilisant les deux tables ci-dessous : 
+![img1.png](img/img1.png)
+![img2.png](img/img2.png)
+Tout cela sauvegardé dans un fichier `.db` en utilisant sqlite.
+
+## Version 1.5 (En attente)
+
+La version 1.5 restera sur la même base que la 1.0, seulement on utilisera plus une base de donnée sqlite 
+mais simplement un fichier binaire (ou plusieurs) pour stocker notamment les trigrammes, pour accélérer les calculs
+et les recherches, plutôt que dans une base de donnée classique, on écrira en binaire, dans un `.bin`
+
+## Version 2.0 (En attente)
+
+La version 2.0 rajoutera à la 1.5 les embeddings : on créer des vecteurs pour "montrer" au modèle
+que deux phrases peuvent être proches par exemple "un chat dort sur le fauteuil" et "un chien dort sur le fauteuil".
+Et pour compléter la requête par exemple, on appliquera un produit scalaire entre deux vecteurs pour savoir les plus intéressants et ainsi trouver une bonne suite à la phrase.
