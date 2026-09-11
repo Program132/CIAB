@@ -1,106 +1,161 @@
 import json
-import sqlite3
-from pathlib import Path
 import sys
+from pathlib import Path
 from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import os
 
 sys.path.append(str(Path(__file__).resolve().parent))
-from config import DEFAULT_DATABASE_FILE, DEFAULT_DATASETS_FOLDER, WORD_REGEX, TOKEN_START_SENTENCE, TOKEN_END_SENTENCE, TOKEN_UNKNOWN_WORD
+from config import *
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-
 DATASETS_DIR = ROOT_DIR / DEFAULT_DATASETS_FOLDER
-INDEX_FILE = ROOT_DIR / "files_index.txt"
-STATE_FILE = ROOT_DIR / "state.json"
-DATABASE_FILE = ROOT_DIR / DEFAULT_DATABASE_FILE
+DATABASE_DIR = ROOT_DIR / DATABASE_FOLDER
+INDEX_FILE = DATABASE_DIR / "files_index.bin"
+STATE_FILE = DATABASE_DIR / "state.json"
+TOKENIZER_FILE = DATABASE_DIR / "tokenizer.bin"
 
-def init_db(connection: sqlite3.Connection):
-    connection.execute("PRAGMA journal_mode = WAL;")
-    connection.execute("PRAGMA synchronous = NORMAL;")
-    connection.execute("PRAGMA cache_size = -64000;")
-    connection.execute("PRAGMA temp_store = MEMORY;")
+SAVE_INTERVAL = 5000
+BATCH_SIZE = 2000
 
-    with connection:
-        connection.execute("""
-            CREATE TABLE IF NOT EXISTS tokenizer (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                word TEXT UNIQUE NOT NULL
-            )
-        """)
 
-        special_tokens = [
-            (1, TOKEN_START_SENTENCE),
-            (2, TOKEN_END_SENTENCE),
-            (3, TOKEN_UNKNOWN_WORD),
-        ]
-        connection.executemany(
-            "INSERT OR IGNORE INTO tokenizer (id, word) VALUES (?, ?)",
-            special_tokens
-        )
-
-def save_state(last_id: int):
-    state = {}
+def load_state():
     if STATE_FILE.exists():
         try:
             with open(STATE_FILE, "r", encoding="utf-8") as f:
-                state = json.load(f)
+                return json.load(f)
         except Exception:
-            state = {}
-    state["last_file_id_done"] = last_id
+            pass
+    return {"last_file_id_done": -1, "last_trainer_file_id_done": -1}
+
+
+def save_state(state):
+    DATABASE_DIR.mkdir(parents=True, exist_ok=True)
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=4)
 
 
+def process_single_file(args):
+    rel_path, root_dir = args
+    file_path = root_dir / rel_path
+    tokens_found = set()
+    if file_path.exists():
+        try:
+            text = file_path.read_text(encoding="utf-8", errors="ignore")
+            for token in WORD_REGEX.findall(text):
+                tokens_found.add(token.lower())
+        except Exception:
+            pass
+    return tokens_found
+
+
 def tokenizer():
-    if not STATE_FILE.exists() or not INDEX_FILE.exists():
-        print("Erreur : Veuillez exécuter preprocessor.py au préalable.")
+    if not INDEX_FILE.exists():
+        print(f"Erreur : Le fichier d'index {INDEX_FILE} n'existe pas.")
         return
 
-    with open(STATE_FILE, "r", encoding="utf-8") as f:
-        state = json.load(f)
-    last_id = state.get("last_file_id_done", -1)
+    DATABASE_DIR.mkdir(parents=True, exist_ok=True)
+    state = load_state()
+    last_id_done = state.get("last_file_id_done", -1)
+    start_id = last_id_done + 1
 
-    connection = sqlite3.connect(DATABASE_FILE)
-    init_db(connection)
+    vocab = set()
+    current_word_id = 1
 
-    with open(INDEX_FILE, "r", encoding="utf-8") as f:
-        total_files = sum(1 for line in f if line.strip())
+    if start_id > 0 and TOKENIZER_FILE.exists():
+        print(f"Reprise à partir du fichier ID {start_id}. Chargement du vocabulaire...")
+        with open(TOKENIZER_FILE, "rb") as vf:
+            for line in vf:
+                line_str = line.decode("utf-8", errors="ignore").strip()
+                if not line_str:
+                    continue
+                parts = line_str.split("|", 1)
+                if len(parts) == 2:
+                    wid_str, w = parts
+                    vocab.add(w)
+                    wid = int(wid_str)
+                    if wid >= current_word_id:
+                        current_word_id = wid + 1
+        print(f"Vocabulaire chargé : {len(vocab)} tokens uniques.")
+        open_mode = "ab"
+    else:
+        start_id = 0
+        open_mode = "wb"
+        print("Démarrage d'un nouveau vocabulaire.")
 
-    current_id = last_id
+    print("Lecture de l'index...")
+    entries = []
+    with open(INDEX_FILE, "rb") as f:
+        for current_id, line in enumerate(f):
+            line_str = line.decode("utf-8", errors="ignore").strip()
+            if not line_str:
+                continue
+            file_id_str, rel_path = line_str.split("|", 1)
+            file_id = int(file_id_str)
+            if file_id >= start_id:
+                entries.append((file_id, rel_path))
+
+    total_files = len(entries)
+    if total_files == 0:
+        print("Aucun fichier à traiter.")
+        return
+
+    last_processed_file_id = last_id_done
+
     try:
-        with open(INDEX_FILE, "r", encoding="utf-8") as f:
-            with tqdm(total=total_files, initial=max(0, last_id + 1), desc="Tokenisation", unit=" fichiers", dynamic_ncols=True) as pbar:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    file_id_str, rel_path = line.split("|", 1)
-                    file_id = int(file_id_str)
+        with open(TOKENIZER_FILE, open_mode) as out_f:
+            if open_mode == "wb":
+                special_tokens = [TOKEN_START_SENTENCE, TOKEN_END_SENTENCE, TOKEN_UNKNOWN_WORD]
+                special_lines = []
+                for st in special_tokens:
+                    vocab.add(st)
+                    special_lines.append(f"{current_word_id}|{st}\n".encode("utf-8"))
+                    current_word_id += 1
+                out_f.writelines(special_lines)
 
-                    if file_id <= last_id:
-                        continue
+            max_workers = os.cpu_count() or 4
+            print(f"Utilisation de {max_workers} cœurs CPU en parallèle.")
 
-                    file_path = ROOT_DIR / rel_path
-                    if file_path.exists():
-                        with open(file_path, "r", encoding="utf-8", errors="ignore") as content_file:
-                            text = content_file.read()
-                            words = {(w.lower(),) for w in WORD_REGEX.findall(text)}
+            with tqdm(total=total_files, desc="Tokenisation", unit=" fichiers", dynamic_ncols=True) as pbar:
+                with ProcessPoolExecutor(max_workers=max_workers) as executor:
+                    for i in range(0, total_files, BATCH_SIZE):
+                        batch = entries[i:i + BATCH_SIZE]
+                        futures = {
+                            executor.submit(process_single_file, (rel_path, ROOT_DIR)): file_id
+                            for file_id, rel_path in batch
+                        }
 
-                            with connection:
-                                connection.executemany("INSERT OR IGNORE INTO tokenizer (word) VALUES (?)", words)
+                        batch_max_file_id = last_id_done
+                        for future in as_completed(futures):
+                            file_id = futures[future]
+                            batch_max_file_id = max(batch_max_file_id, file_id)
+                            try:
+                                file_tokens = future.result()
+                                new_vocab_lines = []
+                                for word in file_tokens:
+                                    if word not in vocab:
+                                        vocab.add(word)
+                                        new_vocab_lines.append(f"{current_word_id}|{word}\n".encode("utf-8"))
+                                        current_word_id += 1
+                                if new_vocab_lines:
+                                    out_f.writelines(new_vocab_lines)
+                            except Exception:
+                                pass
 
-                    current_id = file_id
-                    pbar.update(1)
+                            pbar.update(1)
 
-                    if current_id % 100 == 0:
-                        save_state(current_id)
+                        last_processed_file_id = batch_max_file_id
+                        state["last_file_id_done"] = last_processed_file_id
+                        save_state(state)
+                        pbar.set_postfix(vocab_size=len(vocab), refresh=False)
 
     except KeyboardInterrupt:
-        print("\nInterruption détectée. Sauvegarde de l'état...")
+        print("\nInterruption détectée. Sauvegarde...")
     finally:
-        save_state(current_id)
-        connection.close()
-        print(f"\nIndexation arrêtée au fichier ID {current_id}. Base de données fermée.")
+        state["last_file_id_done"] = last_processed_file_id
+        save_state(state)
+        print(f"\nArrêt au fichier ID {last_processed_file_id}. Vocabulaire final : {len(vocab)} tokens.")
+
 
 if __name__ == "__main__":
     tokenizer()
