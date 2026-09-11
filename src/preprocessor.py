@@ -1,20 +1,3 @@
-"""
-Create a file "files_index.txt" and "state.json"
-
-files_index.txt format:
-0|datasets/wikipedia/...
-1|datasets/wikipedia/...
-...
-54564|datasets/wikipedia/...
-
-
-state.json format:
-{
-    "last_file_id_done": -1,
-    "last_trainer_file_id_done": -1
-}
-"""
-
 import os
 import json
 import sys
@@ -22,12 +5,13 @@ from pathlib import Path
 from tqdm import tqdm
 
 sys.path.append(str(Path(__file__).resolve().parent))
-from config import DEFAULT_DATASETS_FOLDER
+from config import DEFAULT_DATASETS_FOLDER, DATABASE_FOLDER
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATASETS_DIR = ROOT_DIR / DEFAULT_DATASETS_FOLDER
-INDEX_FILE = ROOT_DIR / "files_index.txt"
-STATE_FILE = ROOT_DIR / "state.json"
+DATABASE_DIR = ROOT_DIR / DATABASE_FOLDER
+INDEX_FILE = DATABASE_DIR / "files_index.bin"
+STATE_FILE = DATABASE_DIR / "state.json"
 
 
 def generate_index_and_state():
@@ -39,7 +23,7 @@ def generate_index_and_state():
     datasets_str = str(DATASETS_DIR)
 
     count = 0
-    with open(INDEX_FILE, "w", encoding="utf-8") as f:
+    with open(INDEX_FILE, "wb") as f:
         with tqdm(desc="Indexation des fichiers", unit=" fichiers") as pbar:
             for root, dirs, files in os.walk(datasets_str):
                 dirs.sort()
@@ -47,7 +31,10 @@ def generate_index_and_state():
                 for filename in files:
                     full_path = os.path.join(root, filename)
                     rel_path = os.path.relpath(full_path, root_str).replace("\\", "/")
-                    f.write(f"{count}|{rel_path}\n")
+
+                    line = f"{count}|{rel_path}\n".encode("utf-8")
+                    f.write(line)
+                    
                     count += 1
                     pbar.update(1)
 
