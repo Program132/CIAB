@@ -32,18 +32,25 @@ A chaque fin de version, une release sera publié sur le repository et les déta
 
 # WIP & Changelog
 
-## Version 1.0 (En cours)
+## Version 1.0
 
 La version 1.0 se base sur un modèle d'IA dit trigramme en utilisant les deux tables ci-dessous : 
 ![img1.png](img/img1.png)
 ![img2.png](img/img2.png)
 Tout cela sauvegardé dans un fichier `.db` en utilisant sqlite.
 
-## Version 1.5 (En attente)
+Lien: https://github.com/Program132/CIAB/releases/tag/V1.0
+
+
+## Version 1.5 (En cours)
 
 La version 1.5 restera sur la même base que la 1.0, seulement on utilisera plus une base de donnée sqlite 
 mais simplement un fichier binaire (ou plusieurs) pour stocker notamment les trigrammes, pour accélérer les calculs
 et les recherches, plutôt que dans une base de donnée classique, on écrira en binaire, dans un `.bin`
+
+## Version 1.75 (En attente)
+
+La version 1.75 reprend la 1.5 mais en C.
 
 ## Version 2.0 (En attente)
 
