@@ -37,7 +37,7 @@ Tout cela sauvegardé dans un fichier `.db` en utilisant sqlite.
 Lien: https://github.com/Program132/CIAB/releases/tag/V1.0
 
 
-## Version 1.5 (En cours)
+## Version 1.5
 
 La version 1.5 restera sur la même base que la 1.0, seulement on utilisera plus une base de donnée sqlite 
 mais simplement un fichier binaire (ou plusieurs) pour stocker notamment les trigrammes, pour accélérer les calculs
@@ -46,9 +46,17 @@ et les recherches, plutôt que dans une base de donnée classique, on écrira en
 Vitesse preprocessor.py (`.bin`): `Indexation des fichiers: 2562621 fichiers [00:15, 165557.39 fichiers/s]`<br>
 Vitesse tokenizer.py (`.bin`):`Tokenisation:   13:22<00:00, 2811.60 fichiers/s, vocab_size=5165642`
 
-## Version 1.75 (En attente)
+Lien: https://github.com/Program132/CIAB/releases/tag/V1.5
 
-La version 1.75 reprend la 1.5 mais en C.
+## Version 1.75 (En cours)
+
+La version 1.75 reprend la 1.5 mais réécrite entièrement en C (C23) :
+- Environnement de build multi-plateforme (CMake, `build.bat`, `build.sh`).
+- Structures de données de base validées par des tests unitaires :
+  - `StrList` : liste chaînée de chaînes de caractères.
+  - `HashMapStr` : table de hachage (mots $\rightarrow$ ID) pour l'indexation rapide du vocabulaire.
+  - `Trigram`: structure pour stocker les trigrammes et leur fréquence.
+
 
 ## Version 2.0 (En attente)
 
