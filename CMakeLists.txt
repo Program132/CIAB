@@ -4,20 +4,32 @@ project(CIAB C)
 
 set(CMAKE_C_STANDARD 23)
 
-add_executable(creator 
-    src/creator.c 
+include_directories(src)
 
-    src/ReadFile/ReadFile.c
-    src/ReadFile/ReadFile.h
-    src/SQlite/SQLite.c
-    src/SQlite/SQLite.h   
-    )
+enable_testing()
 
-add_executable(generator 
-    src/generator.c 
+add_executable(test_strlist
+    tests/test_strlist.c
+    src/strlist/strlist.c
+    src/strlist/strlist.h
+)
 
-    src/ReadFile/ReadFile.c
-    src/ReadFile/ReadFile.h
-    src/SQlite/SQLite.c
-    src/SQlite/SQLite.h  
-    )
+add_test(NAME test_strlist COMMAND test_strlist)
+
+add_executable(test_hashmapstr
+    tests/test_hashmapstr.c
+    src/hashmapstr/hashmapstr.c
+    src/hashmapstr/hashmapstr.h
+)
+
+add_test(NAME test_hashmapstr COMMAND test_hashmapstr)
+
+add_executable(test_trigram
+    tests/test_trigram.c
+    src/trigram/trigram.c
+    src/trigram/trigram.h
+)
+
+add_test(NAME test_trigram COMMAND test_trigram)
+
+
